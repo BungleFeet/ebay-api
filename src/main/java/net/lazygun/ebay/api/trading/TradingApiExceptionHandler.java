@@ -1,43 +1,28 @@
 package net.lazygun.ebay.api.trading;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Arrays;
 
 /**
- * Created with IntelliJ IDEA.
- * User: ewan
- * Date: 27/02/13
- * Time: 18:47
- * To change this template use File | Settings | File Templates.
+ * Utility class for processing {@link ErrorType} instances returned in {@link AbstractResponseType} responses from the
+ * eBay Trading API
+ *
+ * @author Ewan Dawson
  */
 public class TradingApiExceptionHandler {
 
-    public static final List<String> SYSTEM_ERRORS = new ArrayList<String>();
-
-    static {
-        SYSTEM_ERRORS.add(""); // TODO: Populate list of system errors
-    }
-
-    public AbstractResponseType throwOnError(AbstractResponseType response) {
-        if (response.getErrorsLength() == 0) return response;
-
-        List<ErrorType> systemErrors = new ArrayList<ErrorType>();
-        List<ErrorType> requestErrors = new ArrayList<ErrorType>();
-
+    /**
+     * Examines the response and throws a {@link TradingApiException} if it is found to contain any errors of severity
+     * {@link SeverityCodeType#ERROR}. No action is taken if the response contains warnings.
+     *
+     * @param response the {@link AbstractResponseType} to examine for serious errors
+     * @throws TradingApiException if the response contains errors
+     */
+    public static void throwOnError(AbstractResponseType response) {
+        if (response.getErrorsLength() == 0) return;
+        ErrorType[] errors = response.getErrors();
         for (ErrorType error : response.getErrors())
             if (error.getSeverityCode().equals(SeverityCodeType.ERROR))
-                if (isSystemError(error)) systemErrors.add(error);
-                else requestErrors.add(error);
-
-        if (systemErrors.size() > 0)
-            throw new TradingApiSystemException(systemErrors);
-        if (requestErrors.size() > 0)
-            throw new TradingApiRequestException(requestErrors);
-
-        return response;
+                throw new TradingApiException(Arrays.asList(errors));
     }
 
-    public boolean isSystemError(ErrorType error) {
-        return SYSTEM_ERRORS.contains(error.getErrorCode());
-    }
 }
