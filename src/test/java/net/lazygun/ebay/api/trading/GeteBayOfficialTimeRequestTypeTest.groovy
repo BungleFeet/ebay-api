@@ -10,22 +10,16 @@ import javax.xml.bind.Unmarshaller
 class GeteBayOfficialTimeRequestTypeTest extends Specification {
 
     def token = System.properties.token
-    def endpoint = new URL(System.properties.endpoint as String ?: "https://api.sandbox.ebay.com/ws/api.dll")
-    def headers = [
-        'X-EBAY-API-COMPATIBILITY-LEVEL': 805,
-        'X-EBAY-API-DEV-NAME': System.properties.devId,
-        'X-EBAY-API-APP-NAME': System.properties.appId,
-        'X-EBAY-API-CERT-NAME': System.properties.certId,
-        'X-EBAY-API-SITEID': 0,
-        'X-EBAY-API-CALL-NAME': 'GeteBayOfficialTime'
-    ]
+    def endpoint = new URL(System.getProperty('endpoint') ?: "https://api.sandbox.ebay.com/ws/api.dll")
+    def headers = new RequestHeaders(System.getProperty('appId'), System.getProperty('devId'), System.getProperty('certId'))
+        .withCallName(GeteBayOfficialTimeRequestType)
     Marshaller marshaller
     Unmarshaller unmarshaller
     def request
 
     URLConnection prepareConnection() {
         def connection = endpoint.openConnection() as HttpURLConnection
-        headers.each { header, value -> connection.addRequestProperty(header, value as String) }
+        headers.toMap().each { header, value -> connection.addRequestProperty(header, value as String) }
         connection.setDoOutput(true)
         connection.setRequestMethod('POST')
         connection
