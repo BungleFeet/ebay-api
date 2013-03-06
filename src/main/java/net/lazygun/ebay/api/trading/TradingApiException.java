@@ -1,7 +1,7 @@
 package net.lazygun.ebay.api.trading;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -15,21 +15,10 @@ import java.util.List;
  */
 public class TradingApiException extends RuntimeException {
 
-    public static final List<String> RETRYABLE_ERRORS = new ArrayList<String>();
-
-    static {
-        String retryable =
-            "24,50,63,248,249,252,368,377,1050,3021,10007,10090,10091,10092,12214,17104,17108,17400,17401," +
-                "17435,17546,17582,17777,20150,20191,20212,20213,20214,20378,20390,21122,21252,21260,21421,21422," +
-                "21425,21428,21430,21852,21855,21910,219078,219255,219289,2190789,21916543,21916595,21916785,21916803," +
-                "21917178,21917193,21917241,21917245,21917326,21917350,21919040,21919062,21919117";
-
-        RETRYABLE_ERRORS.addAll(Arrays.asList(retryable.split(",")));
-    }
-
     private final List<ErrorType> errors;
 
     public TradingApiException(List<ErrorType> errors) {
+        super(createMessage(errors));
         this.errors = new ArrayList<ErrorType>(errors);
     }
 
@@ -39,9 +28,28 @@ public class TradingApiException extends RuntimeException {
 
     public boolean isRetryable() {
         for (ErrorType error : errors) {
-            if (RETRYABLE_ERRORS.contains(error.getErrorCode()))
-                return true;
+            if (!error.getErrorClassification().equals(ErrorClassificationCodeType.SYSTEM_ERROR))
+                return false;
         }
-        return false;
+        return true;
     }
+
+    private static String createMessage(List<ErrorType> errors) {
+        // Create an error message from the first error with ERROR severity, or the first error
+        // of any severity if none exist. Format the message to include the error's long message,
+        // classification, severity and error code.
+        if (errors.size() == 0) return "<No errors>";
+        ErrorType errorToReport = null;
+        for (ErrorType error : errors) {
+            if (error.getSeverityCode().equals(SeverityCodeType.ERROR)) {
+                errorToReport = error;
+                break;
+            }
+        }
+        if (errorToReport == null) errorToReport = errors.get(0);
+        return MessageFormat.format("{0} ({1} {2} {3})", errorToReport.getLongMessage(),
+                                    errorToReport.getErrorClassification(),
+                                    errorToReport.getSeverityCode(), errorToReport.getErrorCode());
+    }
+
 }

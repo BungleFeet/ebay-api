@@ -20,9 +20,10 @@ public class TradingApiExceptionHandler {
     public static void throwOnError(AbstractResponseType response) {
         if (response.getErrorsLength() == 0) return;
         ErrorType[] errors = response.getErrors();
-        for (ErrorType error : response.getErrors())
+        for (ErrorType error : response.getErrors()) {
             if (error.getSeverityCode().equals(SeverityCodeType.ERROR))
                 throw new TradingApiException(Arrays.asList(errors));
+        }
     }
 
 }
